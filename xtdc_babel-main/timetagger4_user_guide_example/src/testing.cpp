@@ -76,7 +76,7 @@
 			// define range of the group
 			config.channel[i].start = 0;	// range begins right after start pulse
 			if (!USE_CONTINUOUS_MODE) {
-				config.channel[i].stop = 20100;	// recording window stops after ~2.5 us
+				config.channel[i].stop = 10000000;	// recording window stops after ~2.5 us
 			//(original config.channel[i].stop = 30000;)		
 			}
 			else {
@@ -90,7 +90,7 @@
 		}
 
 		// generate an internal 25 kHz trigger, used for tiger and continuous mode
-		config.auto_trigger_period = (int)(static_info.auto_trigger_ref_clock / 12500);
+		config.auto_trigger_period = (int)(static_info.auto_trigger_ref_clock / 500);
 		config.auto_trigger_random_exponent = 0;
 
 		// setup TiGeR
@@ -98,7 +98,8 @@
 		// requires proper 50 Ohm termination on the LEMO output to work reliably
 		
 		// width of the 12ns pulse in the auto_trigger clock periods
-		int pulse_width = (int) (12e-9 * static_info.auto_trigger_ref_clock);
+		//int pulse_width = (int) (12e-9 * static_info.auto_trigger_ref_clock);
+		int pulse_width = (int) (5e-6 * static_info.auto_trigger_ref_clock);
 
 		if (!USE_CONTINUOUS_MODE) {
 			// use 200 kHz auto trigger to generate
@@ -181,7 +182,7 @@
 	int64_t processPacket(volatile crono_packet *p, bool print, timetagger4_static_info *si, timetagger4_param_info *pi) {
 		// do something with the data, e.g. calculate current rate
 		int64_t group_abs_time = p->timestamp; // ? p points to the first hit of the group. This line extracts timestamp of first hit of current data package.
-
+		outfile << "New Group!!!"<<"\n";
 		if (!USE_CONTINUOUS_MODE) {
 			// group timestamp increments at binsize, but we see only a fraction of the packets (every update_count)
 			double rate = 1e12 / ((double)(group_abs_time - last_group_abs_time) * pi->packet_binsize);
@@ -327,7 +328,7 @@
 		appendfile.open("C:\\Users\\Administrator\\Documents\\Diana\\data_testing\\RawTOFDataAppend\\" + std::to_string(now) + ".txt");
 
 		// read 100 packets
-		while (packet_count < 5)
+		while (packet_count < 20)
 		{    printf("Reading packets:\n");
 			// get pointers to acquired packets
 			status = timetagger4_read(device, &read_config, &read_data);
