@@ -57,7 +57,7 @@
 		return device;
 	}
 
-	int configure_timetagger(timetagger4_device * device) {
+	int configure_timetagger(timetagger4_device * device,int freq, int t_end) {
 		// prepare configuration
 		timetagger4_static_info static_info;
 		timetagger4_get_static_info(device, &static_info);
@@ -76,7 +76,7 @@
 			// define range of the group
 			config.channel[i].start = 0;	// range begins right after start pulse
 			if (!USE_CONTINUOUS_MODE) {
-				config.channel[i].stop = 10000000;	// recording window stops after ~2.5 us
+				config.channel[i].stop = t_end;	// recording window stops after ~2.5 us
 			//(original config.channel[i].stop = 30000;)		
 			}
 			else {
@@ -90,7 +90,7 @@
 		}
 
 		// generate an internal 25 kHz trigger, used for tiger and continuous mode
-		config.auto_trigger_period = (int)(static_info.auto_trigger_ref_clock / 500);
+		config.auto_trigger_period = (int)(static_info.auto_trigger_ref_clock / freq);
 		config.auto_trigger_random_exponent = 0;
 
 		// setup TiGeR
@@ -182,7 +182,7 @@
 	int64_t processPacket(volatile crono_packet *p, bool print, timetagger4_static_info *si, timetagger4_param_info *pi) {
 		// do something with the data, e.g. calculate current rate
 		int64_t group_abs_time = p->timestamp; // ? p points to the first hit of the group. This line extracts timestamp of first hit of current data package.
-		outfile << "New Group!!!"<<"\n";
+		appendfile << "New Group from process packet!!!"<<"\n";
 		if (!USE_CONTINUOUS_MODE) {
 			// group timestamp increments at binsize, but we see only a fraction of the packets (every update_count)
 			double rate = 1e12 / ((double)(group_abs_time - last_group_abs_time) * pi->packet_binsize);
@@ -209,7 +209,9 @@
 		uint32_t rollover_count = 0; //? times the counter has overflown
 		// 
 		uint64_t rollover_period_bins = si->rollover_period;
-		std::cout<<"rollover_period "<<rollover_period_bins<<std::endl;
+		appendfile<<"rollover_period "<<rollover_period_bins<<"Rollover count " << rollover_count <<std::endl;
+		appendfile<<"hitcount "<< hit_count << "Packet_binsize " << pi->packet_binsize << std::endl;
+		appendfile <<"Rate " << 1e12 / ((double)(group_abs_time - last_group_abs_time) * pi->packet_binsize )<< std::endl;
 		double full_ts_us=0; //!just testing
 		for (int i = 0; i < hit_count; i++)
 		{
@@ -239,7 +241,9 @@
 				full_ts_us=ts_offset_us+group_abs_time*pi->binsize/1000000; //!just testing 24-07-2023
 				//! just added	
 				outfile << ("%u", full_ts_us) ;
-				appendfile << ("%u", ts_offset_us) << ", ";
+				appendfile << ("%u", ts_offset_us) ;
+				appendfile << "\n";
+				outfile << "\n";
 				//! just added		
 				if (USE_CONTINUOUS_MODE) {
 					if (channel == 0)
@@ -262,18 +266,21 @@
 
 			}
 		}
-		appendfile << "\n";
-		outfile << "\n";
+		
 		return group_abs_time;
 	}
 
 	int main(int argc, char* argv[]) {
+		int freq_Hz=std::stoi(argv[1]); //done
+		int group_end = std::stoi(argv[2]); //done
+		int max_packet = std::stoi(argv[3]); //done
+
 		printf("cronologic timetagger4_user_guide_example using driver: %s\n", timetagger4_get_driver_revision_str());
 		timetagger4_device* device = initialize_timetagger(8 * 1024 * 1024, 0, 0);
 		if (device == nullptr) {
 			exit(1);
 		}
-		int status = configure_timetagger(device);
+		int status = configure_timetagger(device,freq_Hz, group_end);
 		if (status != CRONO_OK) {
 			printf("Could not configure TimeTagger4: %s", timetagger4_get_last_error_message(device));
 			timetagger4_close(device);
@@ -324,11 +331,14 @@
 		
 		//! Here the files for data saving are configured and their timestamp is set with chrono which uses the current unix time in ms
 		unsigned __int64 now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-		outfile.open("C:\\Users\\Administrator\\Documents\\Diana\\data_testing\\outfile" + std::to_string(now) + ".txt");
-		appendfile.open("C:\\Users\\Administrator\\Documents\\Diana\\data_testing\\RawTOFDataAppend\\" + std::to_string(now) + ".txt");
-
+		//outfile.open("C:\\Users\\Administrator\\Documents\\Diana\\data_testing\\outfile" + std::to_string(now) + ".txt");
+		//appendfile.open("C:\\Users\\Administrator\\Documents\\Diana\\data_testing\\RawTOFDataAppend\\" + std::to_string(now) + ".txt");
+		outfile.open("C:\\Users\\Administrator\\Documents\\Diana\\data_testing\\outfile" + std::to_string(freq_Hz) +
+		"_t_"+std::to_string(group_end)+"_Packs_"+std::to_string(max_packet)+ ".txt");
+		appendfile.open("C:\\Users\\Administrator\\Documents\\Diana\\data_testing\\append_freq_" + std::to_string(freq_Hz) +
+		"_t_"+std::to_string(group_end)+"_Packs_"+std::to_string(max_packet)+ ".txt");
 		// read 100 packets
-		while (packet_count < 20)
+		while (packet_count < max_packet)
 		{    printf("Reading packets:\n");
 			// get pointers to acquired packets
 			status = timetagger4_read(device, &read_config, &read_data);
