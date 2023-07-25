@@ -76,7 +76,7 @@
 			// define range of the group
 			config.channel[i].start = 0;	// range begins right after start pulse
 			if (!USE_CONTINUOUS_MODE) {
-				config.channel[i].stop = 5000;	// recording window stops after ~20 us
+				config.channel[i].stop = 20100;	// recording window stops after ~2.5 us
 			//(original config.channel[i].stop = 30000;)		
 			}
 			else {
@@ -90,13 +90,13 @@
 		}
 
 		// generate an internal 25 kHz trigger, used for tiger and continuous mode
-		config.auto_trigger_period = (int)(static_info.auto_trigger_ref_clock / 25000);
+		config.auto_trigger_period = (int)(static_info.auto_trigger_ref_clock / 12500);
 		config.auto_trigger_random_exponent = 0;
 
 		// setup TiGeR
 		// sending a signal to the LEMO outputs (and to the TDC on the same channel)
 		// requires proper 50 Ohm termination on the LEMO output to work reliably
-
+		
 		// width of the 12ns pulse in the auto_trigger clock periods
 		int pulse_width = (int) (12e-9 * static_info.auto_trigger_ref_clock);
 
@@ -128,15 +128,26 @@
 		}
 
 		for (int i = 1; i < TDC4_TIGER_COUNT; i++) {
-			config.tiger_block[i].enable = USE_TIGER_STOPS ? 1 : 0;
-			config.tiger_block[i].start = i * 100;
-			config.tiger_block[i].stop = config.tiger_block[i].start + pulse_width;
-			config.tiger_block[i].negate = 0;
-			config.tiger_block[i].retrigger = 0;
-			config.tiger_block[i].extend = 0;
-			config.tiger_block[i].enable_lemo_output = USE_TIGER_STOPS ? 1 : 0;
-			config.tiger_block[i].sources = TIMETAGGER4_TRIGGER_SOURCE_AUTO;
-
+			if(i==1){
+				config.tiger_block[i].enable = USE_TIGER_STOPS ? 1 : 0;
+				config.tiger_block[i].start =  0; //!just changed from i*100
+				config.tiger_block[i].stop = config.tiger_block[i].start + pulse_width;
+				config.tiger_block[i].negate = 0;
+				config.tiger_block[i].retrigger = 0;
+				config.tiger_block[i].extend = 0;
+				config.tiger_block[i].enable_lemo_output = USE_TIGER_STOPS ? 1 : 0;
+				config.tiger_block[i].sources = TIMETAGGER4_TRIGGER_SOURCE_S;
+			}
+			else{
+				config.tiger_block[i].enable =  0;
+				config.tiger_block[i].start =  100; //!just changed from i*100
+				config.tiger_block[i].stop = config.tiger_block[i].start + pulse_width;
+				config.tiger_block[i].negate = 0;
+				config.tiger_block[i].retrigger = 0;
+				config.tiger_block[i].extend = 0;
+				config.tiger_block[i].enable_lemo_output = USE_TIGER_STOPS ? 1 : 0;
+				config.tiger_block[i].sources = TIMETAGGER4_TRIGGER_SOURCE_S;
+			}
 
 			if (USE_TIGER_STOPS)
 				config.dc_offset[i] = TIMETAGGER4_DC_OFFSET_P_LVCMOS_18;
@@ -197,7 +208,8 @@
 		uint32_t rollover_count = 0; //? times the counter has overflown
 		// 
 		uint64_t rollover_period_bins = si->rollover_period;
-		double full_ts_ns=0; //!just testing
+		std::cout<<"rollover_period "<<rollover_period_bins<<std::endl;
+		double full_ts_us=0; //!just testing
 		for (int i = 0; i < hit_count; i++)
 		{
 			uint32_t hit = packet_data[i];
@@ -222,17 +234,17 @@
 				uint32_t ts_offset = hit >> 8 & 0xffffff; //? >> is bitwise shift operation. >> 8 shifts 8 bits to the right
 				//? bits representing the time stamp start at 8 bits in hit.
 				// Convert timestamp to ns, this is relative to the start of the group
-				double ts_offset_ns = (ts_offset + rollover_count * rollover_period_bins) * pi->binsize / 1000.0;
-				full_ts_ns=ts_offset_ns+group_abs_time*pi->binsize/1000; //!just testing 21-07-2023
+				double ts_offset_us = (ts_offset + rollover_count * rollover_period_bins) * pi->binsize / 1000000.0;
+				full_ts_us=ts_offset_us+group_abs_time*pi->binsize/1000000; //!just testing 24-07-2023
 				//! just added	
-				outfile << ("%f", full_ts_ns) << ",";
-				appendfile << ("%f", ts_offset_ns) << ", ";
+				outfile << ("%u", full_ts_us) ;
+				appendfile << ("%u", ts_offset_us) << ", ";
 				//! just added		
 				if (USE_CONTINUOUS_MODE) {
 					if (channel == 0)
 					{
 						// compute the absolute time by adding the group time in ns
-						double abs_ts_on_a = (group_abs_time * pi->packet_binsize) / 1000 + ts_offset_ns;
+						double abs_ts_on_a = (group_abs_time * pi->packet_binsize) / 1000 + ts_offset_us;
 						double diff = abs_ts_on_a - last_abs_ts_on_a;
 						if (last_abs_ts_on_a > 0 && print) {
 							printf("Time difference between hits on A  %.1f ns\n", diff);
@@ -244,7 +256,7 @@
 				
 				else {
 					if (print)
-						printf("Hit  on channel %c -hit %u - flags %u -real Ts %d - offset %u (raw) / %.1f ns\n", channel_letter, hit, flags,full_ts_ns, ts_offset, ts_offset_ns);
+						printf("Hit  on channel %c -hit %u - flags %u -real Ts %d - offset %u (raw) / %.4f us\n", channel_letter, hit, flags,full_ts_us, ts_offset, ts_offset_us);
 				}
 
 			}
@@ -268,7 +280,7 @@
 		}
 		timetagger4_static_info static_info;
 		timetagger4_get_static_info(device, &static_info);
-
+		
 		timetagger4_param_info parinfo;
 		timetagger4_get_param_info(device, &parinfo);
 
@@ -315,8 +327,8 @@
 		appendfile.open("C:\\Users\\Administrator\\Documents\\Diana\\data_testing\\RawTOFDataAppend\\" + std::to_string(now) + ".txt");
 
 		// read 100 packets
-		while (packet_count < 10)
-		{
+		while (packet_count < 5)
+		{    printf("Reading packets:\n");
 			// get pointers to acquired packets
 			status = timetagger4_read(device, &read_config, &read_data);
 			if (status != CRONO_OK) {
@@ -331,6 +343,7 @@
 			{
 				// iterate over all packets received with the last read
 				volatile crono_packet* p = read_data.first_packet;
+				std::cout<<read_data.last_packet<<std::endl;
 				while (p <= read_data.last_packet)
 				{
 					// printf is slow, so this demo only processes every nth packet 
