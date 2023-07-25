@@ -1,3 +1,5 @@
+import numpy as np
+import sys
 def multiply_numbers_by_constant(numbers, constant):
     return [num * constant for num in numbers]
 
@@ -16,6 +18,7 @@ if __name__ == "__main__":
     constant_value = 500e-06
 
     try:
+        freqHz = float(sys.argv[1])
         # Read the numbers from the input file
         with open(input_file_name, "r") as file:
           
@@ -25,10 +28,11 @@ if __name__ == "__main__":
         result = multiply_numbers_by_constant(input_numbers, constant_value)
         time_difference = compute_time_difference(result)
         # Print the resulting values
-        print("Input Numbers:", input_numbers)
-        print("Constant Value:", constant_value)
-        print("Result after Multiplication:", result)
-        print("Time difference:", time_difference)
+        #print("Input Numbers:", input_numbers)
+        print("units: us")
+        #print("Result after Multiplication:", result)
+        print("Time difference avg: {:.3f}".format(np.mean(time_difference)))
+        print("Period:{:.2f}".format(1e06*1/freqHz ))
 
     except FileNotFoundError:
         print(f"Error: File '{input_file_name}' not found.")
