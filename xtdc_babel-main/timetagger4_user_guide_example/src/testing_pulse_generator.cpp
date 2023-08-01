@@ -9,6 +9,7 @@
 	#include <string>
 	#include <sstream>
 	#include <stdlib.h>
+	#include <stdexcept>
 
 	#include <thread>
 
@@ -153,7 +154,7 @@
 			if (USE_TIGER_STOPS)
 				config.dc_offset[i] = TIMETAGGER4_DC_OFFSET_P_LVCMOS_18;
 			else // user input expect NIM signal
-				config.dc_offset[i] = TIMETAGGER4_DC_OFFSET_N_NIM;		
+				config.dc_offset[i] = TIMETAGGER4_DC_OFFSET_P_TTL;		
 
 			// this is not related to the tigers, but uses the same indexing (0 is start)
 			// optionally increase input delay by 10 * 200 ps for each channel on new TT		
@@ -250,7 +251,7 @@
 				double ts_offset_us = (ts_offset + rollover_count * rollover_period_bins) * pi->binsize / 1000000.0;
 				full_ts_us=ts_offset_us+group_abs_time*pi->binsize/1000000; //!just testing 24-07-2023
 				//! just added	
-				outfile << ("%u", full_ts_us) ;
+				outfile << ("%u", ts_offset_us) ;
 				if(verbose){
 					appendfile << ("%u", ts_offset_us)<<std::endl ;
 					appendfile << "hit "<< 1 << " ts_offset "<< ts_offset << " ts " << 
@@ -284,11 +285,37 @@
 	}
 
 	int main(int argc, char* argv[]) {
-		int freq_Hz=std::stoi(argv[1]); //done
-		int group_end = std::stoi(argv[2]); //done
-		int max_packet = std::stoi(argv[3]); //done
-		float pulse_width = 12e-09;//std::stof(argv[4]);
-		bool verbose = std::stoi(argv[4]);
+		 int freq_Hz, group_end,max_packet,pulse_width,verbose;
+		try {
+       	 
+		  if (argc <5 ) {
+            std::cout << "Using default values: group_end = 25000 max_packet = 1000 pulse_width = 12e-09 verbose = false" << std::endl;
+			freq_Hz=12500; //done
+			group_end = 25000; //done
+			max_packet = 1000; //done
+			pulse_width = 12e-09;
+			verbose = false;
+           
+        } else {
+            freq_Hz=std::stoi(argv[1]); //done
+			group_end = std::stoi(argv[2]); //done
+			max_packet = std::stoi(argv[3]); //done
+			pulse_width = std::stof(argv[4]);
+			verbose = std::stoi(argv[5]);
+
+            // Check if the first argument is zero, and if it is, set num1 to a default value
+            if (pulse_width == 0) {
+                std::cout << "Using default value for pulse width: 12e-09" << std::endl;
+                pulse_width = 12e-09; // Assign default value for num1
+            }
+        }
+		}
+		catch (const std::exception& e) {
+    		std::cout << "Error: " << e.what() << std::endl;
+		}
+
+
+		
 
 		printf("cronologic timetagger4_user_guide_example using driver: %s\n", timetagger4_get_driver_revision_str());
 		timetagger4_device* device = initialize_timetagger(8 * 1024 * 1024, 0, 0);
