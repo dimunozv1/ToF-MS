@@ -1,0 +1,8 @@
+time_s = 20
+MEASURING_WINDOW_TIME_us = 40
+FREQ_HZ = 10
+TRIAL = 1
+TARGET_FOLDER = C:/Users/Administrator/Documents/Diana/Run_TOF-MS_programs/Data/Recording
+FIGURE_NAME = Simion_Simulation
+FIGURE_LOCATION = C:/Users/Administrator/Documents/Diana/Run_TOF-MS_programs/Figures/Recording
+PLOT_NAME = Simulation_Ti_ions_with_Noise
