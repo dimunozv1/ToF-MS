@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.12) 
-set(CRONO_TARGET_NAME "merge")
+set(CRONO_TARGET_NAME "get_data3")
 project(${CRONO_TARGET_NAME})
+set(OUTPUT_DIR "C:/Users/Administrator/Documents/Diana/Run_TOF-MS_programs")
+
 # _____________________________________________________________________________
 # Build Windows/Linux `xtdc4_ugex.exe/xtdc4_ugex` executable, 
 # for (Debug/Release) configurations.
@@ -34,7 +36,7 @@ set(CRONO_DEP_PKG_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${PROJ_SRC_INDIR}/lib/x64)
 link_directories(${CRONO_DEP_PKG_LIB_DIR})
 
 # Set output directory_________________________________________________________
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CRONO_DEP_PKG_LIB_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_DIR})
 
 # Validate that directories exist _____________________________________________
 IF(     NOT EXISTS "${CRONO_DEP_PKG_LIB_DIR}" 
@@ -43,10 +45,15 @@ IF(     NOT EXISTS "${CRONO_DEP_PKG_LIB_DIR}"
         message(FATAL_ERROR 
                 "Crono: Please copy driver installation folder <TimeTagger4/driver> to the project root.")
 ENDIF()
+IF(     NOT EXISTS "${OUTPUT_DIR}" 
+) 
+        message(FATAL_ERROR 
+                "Output folder was not found")
+ENDIF()
         
 # Add the target  _____________________________________________________________
 add_executable(${CRONO_TARGET_NAME} 
-        ${PROJ_SRC_INDIR}/src/merge.cpp)
+        ${PROJ_SRC_INDIR}/src/TOF_Time_Tagger.cpp)
 
 # Windows-specific Configurations _____________________________________________
 IF ( CRONO_GEN_PLATFORM  STREQUAL "windows")
