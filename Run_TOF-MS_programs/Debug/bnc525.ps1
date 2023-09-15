@@ -1,6 +1,6 @@
 # Specify the COM port name. Update this with your device's COM port.
 $comPort = "COM3"
-$filePath = "C:\Users\Administrator\Documents\Diana\xtdc_babel-main\lib\x64\Debug\TOF_Trigger_scheme.txt"
+$filePath = "C:\Users\Administrator\Documents\Diana\Run_TOF-MS_programs\Debug\TOF_Trigger_scheme.txt"
 
 
 # Check if there is at least one argument provided

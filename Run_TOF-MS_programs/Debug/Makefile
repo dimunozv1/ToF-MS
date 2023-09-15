@@ -63,7 +63,7 @@ Histogram:
 
 Triggering: bnc525.ps1
 	start /B powershell -File "C:\Users\Administrator\Documents\Diana\Run_TOF-MS_programs\Debug\bnc525.ps1" $(time_ms)
-	start /WAIT cmd /C "C:\Users\Administrator\Documents\Diana\xtdc_babel-main\lib\x64\Debug\get_data3.exe" $(FREQ_HZ) $(GROUP_SIZE_BINS) $(PACKETS) 0 $(VERBOSE)
+	start /WAIT cmd /C "C:\Users\Administrator\Documents\Diana\xtdc_babel-main\lib\x64\Debug\get_data.exe" $(FREQ_HZ) $(GROUP_SIZE_BINS) $(PACKETS) 0 $(VERBOSE)
 	echo Exit Status: %errorlevel%
 
 # Clean target to remove the moved file from the target folder
