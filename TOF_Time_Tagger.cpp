@@ -77,7 +77,7 @@
 			// define range of the group
 			config.channel[i].start = 0;	// range begins right after start pulse
 			if (!USE_CONTINUOUS_MODE) {
-				config.channel[i].stop = t_end;	// recording window stops after ~2.5 us
+				config.channel[i].stop = t_end;	// recording window stops after t_end
 			//(original config.channel[i].stop = 30000;)		
 			}
 			else {
