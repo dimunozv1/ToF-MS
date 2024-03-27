@@ -30,7 +30,7 @@ def run_makefile():
     target_folder = target_folder_entry.get() if target_folder_entry.get() else DEFAULT_DATA_FOLDER
     figure_location = figure_location_entry.get() if figure_location_entry.get() else DEFAULT_FIGURE_FOLDER
     # Create a configuration file (e.g., config.txt) with these values
-    with open("config.txt", "w") as config_file:
+    with open("C:\\Users\\Administrator\\Documents\\Diana\\Run_TOF-MS_programs\\Debug\\config.txt", "w") as config_file:
         config_file.write(f"time_s = {run_time_value}\n")
         config_file.write(f"MEASURING_WINDOW_TIME_us = {data_acquisition_value}\n")
         config_file.write(f"FREQ_HZ = {freq_value}\n")
@@ -45,7 +45,7 @@ def run_makefile():
     
     # Run the Makefile with the generated configuration file
     makefile_command = ["mingw32-make"]
-    subprocess.run(makefile_command, shell=True) #,cwd="C:\\Users\\Administrator\\Documents\\Diana\\Run_TOF-MS_programs\\Debug")
+    subprocess.run(makefile_command, shell=True,cwd="C:\\Users\\Administrator\\Documents\\Diana\\Run_TOF-MS_programs\\Debug")
 def browse_source_file():
     
     source_file = filedialog.askopenfilename()
@@ -130,7 +130,7 @@ def run_tofms():
 window = tk.Tk()
 window.title("TOF-MS Controller")
 # Set the window icon
-window.iconbitmap("Icon.ico")
+window.iconbitmap("C:/Users/Administrator/Documents/Diana/Run_TOF-MS_programs/Debug/Icon.ico")
 
 
 
