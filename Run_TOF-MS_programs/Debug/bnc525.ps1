@@ -5,8 +5,9 @@ $filePath = "C:\Users\Administrator\Documents\Diana\Run_TOF-MS_programs\Debug\TO
 
 # Check if there is at least one argument provided
 if ($args.Length -gt 0) {
-    $runtimeVariable = $args[0]
-    Write-Host "Received runtime variable: $runtimeVariable"
+    $Programm_Runtime_ms = $args[0]
+    $Period_s = $args[1]
+    Write-Host "Received runtime variable: $Programm_Runtime_ms"
 } else {
     Write-Host "No runtime variable provided."
 }
@@ -40,7 +41,16 @@ try {
         $response = $serialPort.ReadExisting()
         Write-Host "Response: $response" #Writes the response from bnc 525 to the terminal
     }
-    Start-Sleep -Milliseconds $runtimeVariable
+    $serialPort.WriteLine("Command: ::PULSE0:PERIOD $Period_s`r`n")
+    Write-Host "Command: ::PULSE0:PERIOD $Period_s`r`n" #Writes the command out to the terminal
+    Start-Sleep -Milliseconds 100
+    $response = $serialPort.ReadExisting()
+    Write-Host "Response: $response" #Writes the response from bnc 525 to the terminal
+    $serialPort.WriteLine(":PULSE0:STATE ON`r`n")
+    Write-Host "Command: :PULSE0:STATE ON"
+    $response = $serialPort.ReadExisting()
+    Write-Host "Response: $response"
+    Start-Sleep -Milliseconds $Programm_Runtime_ms
     $serialPort.WriteLine(":PULSE0:STATE OFF`r`n")
     Write-Host "Command: :PULSE0:STATE OFF"
     $response = $serialPort.ReadExisting()

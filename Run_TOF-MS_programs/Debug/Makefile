@@ -11,7 +11,7 @@ MEASURING_WINDOW_TIME_us ?= 40
 
 #Frequency of the start
 FREQ_HZ ?= 10
-
+PERIOD_S := $(shell python -c "print(1/float($(FREQ_HZ)))")
 
 #Recording window time in bins, 1bin=500ps
 GROUP_SIZE_BINS := $(shell python -c "print(str(int((int($(MEASURING_WINDOW_TIME_us))/(500e-6))))))
@@ -62,7 +62,7 @@ Histogram:
 	python $(py_histograms) 600 $(TRIAL) $(time_s) $(MEASURING_WINDOW_TIME_us) $(FIGURE_NAME) $(PLOT_NAME) $(FIGURE_LOCATION) $(CURRENT_DATETIME)
 
 Triggering: bnc525.ps1
-	start /B powershell -File "C:\Users\Administrator\Documents\Diana\Run_TOF-MS_programs\Debug\bnc525.ps1" $(time_ms)
+	start /B powershell -File "C:\Users\Administrator\Documents\Diana\Run_TOF-MS_programs\Debug\bnc525.ps1" $(time_ms) $(PERIOD_S)
 	start /WAIT cmd /C "C:\Users\Administrator\Documents\Diana\xtdc_babel-main\lib\x64\Debug\get_data.exe" $(FREQ_HZ) $(GROUP_SIZE_BINS) $(PACKETS) 0 $(VERBOSE)
 	echo Exit Status: %errorlevel%
 
