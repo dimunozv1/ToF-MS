@@ -1,7 +1,7 @@
 all: run
 
 compile:
-	g++ -c .\main.cpp -v
+	g++ -c .\main.cpp -v -Wall
 
 link:
 	g++ main.o -o main.exe -lsfml-graphics -lsfml-window -lsfml-system
