@@ -1,10 +1,10 @@
 all: run
 
 compile:
-	g++ -c .\main.cpp -v -Wall
+	g++ -c .\main-parallel.cpp -v -Wall
 
 link:
-	g++ main.o -o main.exe -lsfml-graphics -lsfml-window -lsfml-system
+	g++ main-parallel.o -o main.exe -lsfml-graphics -lsfml-window -lsfml-system
 
 run: compile link
 	.\main.exe

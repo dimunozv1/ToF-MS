@@ -92,7 +92,7 @@ int main()
     
 
     std::ofstream file("data-dist-normal.txt");
-    std::ofstream time_vs_size("time.txt");
+    std::ofstream time_vs_size("parallel-time.txt");
     int i = 0;
     HistogramGraphics histogram_setup = initializeHistogramGraphics(window,data);
     while (window.isOpen())
@@ -103,14 +103,13 @@ int main()
             if (event.type == sf::Event::Closed)
                 window.close();
         }
-        for (int i = 0; i < 5; i++){
+        for (int i = 0; i < 4; i++){
         data.push_back(distribution(generator));  // Generate random number
         //std::cout<<"Value generated " << value <<std::endl;
         file << data.back() << std::endl;
         }
-        if(i==5000){
-            
-            
+        if(i==200){
+                      
             
             histogram_setup.updateHistogramBars(data,window);
             histogram_setup.updateLegend(data);
@@ -121,6 +120,7 @@ int main()
             auto end = std::chrono::high_resolution_clock::now();  // End timer
             std::chrono::duration<double> elapsed = end - start;
             time_vs_size << elapsed.count() << "\t" << data.size() << "\n";
+        
         }
         window.clear(sf::Color::White);
         for (const auto& bar : histogram_setup.Histogram_bars)
