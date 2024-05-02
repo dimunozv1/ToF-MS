@@ -12,6 +12,7 @@
 	#include <stdexcept>
 	#include <vector>
 	#include <thread>
+	#include "histogram.h"
 
 	using namespace std;
 	ofstream outfile;
@@ -25,6 +26,7 @@
 	const bool USE_CONTINUOUS_MODE = false;
 	const bool USE_TIGER_START = true;	// if false, external signal must be provided on start; not applicable if continuous mode is enabled
 	const bool USE_TIGER_STOPS = false; 	// if false please connect signals to some of channels A-D
+
 	//?binsize is the resolution of the card given in picoseconds. Can be 100ps, 200ps... etc depending on the model
 	//?Timestamps are given in integer multiples of the binsize and can then be converted to seconds, nanoseconds or whatever is useful
 	//?groups are packets of data that arrive within a window of time. This is given by config.channel[i].start and
@@ -166,7 +168,8 @@
 	}
 
 
-	void print_device_information(timetagger4_device * device, timetagger4_static_info * si, timetagger4_param_info * pi) {
+	void print_device_information(timetagger4_device * device, timetagger4_static_info * si, timetagger4_param_info * pi) 
+	{
 		// print board information
 		printf("Board Serial        : %d.%d\n", si->board_serial >> 24, si->board_serial & 0xffffff);
 		printf("Board Configuration : %s\n", timetagger4_get_device_name(device));
@@ -176,60 +179,66 @@
 		printf("Driver SVN Revision : %d\n", si->driver_build_revision);
 		printf("\nTDC binsize         : %0.2f ps\n", pi->binsize);
 	}
-		void saveDataToFile(std::vector<double>& data, int counter,std::string name, int steps) { //change int back to double when going back
-    //gets the current Unix time in ms
-	std::string filename="C:\\Users\\Administrator\\Documents\\Diana\\data_testing\\Data\\outfile_freq_"+ name+".txt";
-    if(counter%steps==0)
-             { 
-                //std::cout << "Opening file "<< std::endl;
-                
 
-                int now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-	            filename ="C:\\Users\\Administrator\\Documents\\Diana\\data_testing\\Data\\outfile_freq_"+ name +std::to_string(now) +".txt";
-                
+	void saveDataToFile(std::vector<double>& data, int counter,std::string name, int steps) 
+	{ //change int back to double when going back
+    	//gets the current Unix time in ms
+		std::string filename="C:\\Users\\Administrator\\Documents\\Diana\\data_testing\\Data\\outfile_freq_"+ name+".txt";
+    	if(counter%steps==0)
+    	         { 
+    	            //std::cout << "Opening file "<< std::endl;
+	
 
-             }
-    std::ofstream databin(filename, std::ios::out | std::ios::app);
-                if (!databin) 
-                {
-                    std::cerr << "Error opening file: " << filename << std::endl;
-                    return;
-                }
-    size_t dataSize = data.size();
-     for (double num : data) {
-            databin << num << "\n";
-        }
-    //databin.write(reinterpret_cast<const char*>(&dataSize), sizeof(size_t));
-    //databin.write(reinterpret_cast<const char*>(data.data()), dataSize * sizeof(double));
+    	            int now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+		            filename ="C:\\Users\\Administrator\\Documents\\Diana\\data_testing\\Data\\outfile_freq_"+ name +std::to_string(now) +".txt";
+	
 
-    databin.close();
-    data.clear(); //Now the vector is clean again. 
-    //This function creates a data file with the hits of all the packets processed in the last loop
-}
+    	         }
+    	std::ofstream databin(filename, std::ios::out | std::ios::app);
+    	            if (!databin) 
+    	            {
+    	                std::cerr << "Error opening file: " << filename << std::endl;
+    	                return;
+    	            }
+    	size_t dataSize = data.size();
+    	 for (double num : data) 
+		{databin << num << "\n";}
+    	//databin.write(reinterpret_cast<const char*>(&dataSize), sizeof(size_t));
+    	//databin.write(reinterpret_cast<const char*>(data.data()), dataSize * sizeof(double));
+
+    	databin.close();
+    	data.clear(); //Now the vector is clean again. 
+    	//This function creates a data file with the hits of all the packets processed in the last loop
+}	
 
 	double last_abs_ts_on_a = 0; //? TS last hit on channel A
 	int64_t last_group_abs_time = 0;
 
-	int64_t processPacket(volatile crono_packet *p, bool print, timetagger4_static_info *si, timetagger4_param_info *pi, bool verbose,std::vector <double> & get_data) {
+	int64_t processPacket(volatile crono_packet *p, bool print, timetagger4_static_info *si, timetagger4_param_info *pi, bool verbose,std::vector <double> & get_data) 
+	{
 		// do something with the data, e.g. calculate current rate
 		int64_t group_abs_time = p->timestamp; // ? p points to the group and here we extract the timestamp for the group
 		int64_t diff = group_abs_time-last_group_abs_time;
-		if(verbose){	
+		if(verbose)
+		{	
 			appendfile << "New Group from process packet!!!"<<"\n";
 			appendfile << "New group timestamp: " << group_abs_time << " Old group timestamp: " << last_group_abs_time << std::endl;
 			appendfile << "diff Timestamp: " << diff << " diff in us: " << diff * 1e-6 * pi->packet_binsize << std::endl; 
 
 		}
 		
-		if (!USE_CONTINUOUS_MODE) {
+		if (!USE_CONTINUOUS_MODE) 
+		{
 			// group timestamp increments at binsize, but we see only a fraction of the packets (every update_count)
 			double rate = 1e12 / ((double)(group_abs_time - last_group_abs_time) * pi->packet_binsize);
 			//? this is the rate for the last group. 1e12*pi->packet_binsize is because the binsize gives a integer of the 
 			//? resolution of the card, and it is given in picoseconds, thus 1e12 . the substraction is the difference 
 			//?betweeen timestamp of first hit from last group and timestamp from first hit of new group. 
-			if (print && last_group_abs_time > 0) {
+			if (print && last_group_abs_time > 0) 
+			{
 				printf("\r%.6f kHz", rate / 1000.0);
-				if(verbose){
+				if(verbose)
+				{
 					appendfile <<" from IF Rate " << 1e12 / ((double)(group_abs_time - last_group_abs_time) * pi->packet_binsize )<< std::endl;
 				}
 				printf("Packet size: %d\n",  pi->packet_binsize); //! This is just for checking. Delete after using and record value. 
@@ -249,7 +258,8 @@
 		uint32_t rollover_count = 0; //? times the counter has overflown
 		// 
 		uint64_t rollover_period_bins = si->rollover_period;
-		if(verbose){
+		if(verbose)
+		{
 			appendfile<<"Rollover count " << rollover_count <<std::endl;
 			appendfile<<"hitcount "<< hit_count << std::endl;
 		}
@@ -262,7 +272,8 @@
 			uint32_t flags = hit >> 4 & 0xf;
 
 
-			if ((flags & TIMETAGGER4_HIT_FLAG_TIME_OVERFLOW) != 0) {  //? bitwise AND operation
+			if ((flags & TIMETAGGER4_HIT_FLAG_TIME_OVERFLOW) != 0) 
+			{  //? bitwise AND operation
 			/*//? example:   Binary Representation of flags:              01011010
   			  //? Binary Representation of TIMETAGGER4_HIT_FLAG_TIME_OVERFLOW:  00000010
             //? Result of flags & TIMETAGGER4_HIT_FLAG_TIME_OVERFLOW:         00000010
@@ -270,7 +281,8 @@
 				// this is a overflow of the 23/24 bit counter)
 				rollover_count++;
 			}
-			else {
+			else 
+			{
 				// extract channel number (A-D)
 				char channel_letter = 65 + channel;
 
@@ -279,33 +291,36 @@
 				//? bits representing the time stamp start at 8 bits in hit.
 				// Convert timestamp to ns, this is relative to the start of the group
 				double ts_offset_us = (ts_offset + rollover_count * rollover_period_bins) * pi->binsize / 1000000.0;
-				full_ts_us=ts_offset_us+group_abs_time*pi->binsize/1000000; //!just testing 24-07-2023
-				//! just added	
-				outfile << ("%u", ts_offset_us) ;
-				//get_data.push_back(ts_offset_us);
-				std::cout<<"holi"<<std::endl;
-				if(verbose){
+				full_ts_us=ts_offset_us+group_abs_time*pi->binsize/1000000; //factor of 100000 to converet to us
+					
+				//! outfile << ("%u", ts_offset_us) ;
+				get_data.push_back(ts_offset_us);
+				
+				if(verbose)
+				{
 					appendfile << ("%u", ts_offset_us)<<std::endl ;
 					appendfile << "hit "<< 1 << " ts_offset "<< ts_offset << " ts " << 
 					ts_offset + rollover_count * rollover_period_bins << " full TS " << ts_offset+group_abs_time << "\n" << " flags " << flags << std::endl;
 				}
-				outfile << "\n";
-				//! just added		
-				if (USE_CONTINUOUS_MODE) {
+				//! outfile << "\n";
+						
+				if (USE_CONTINUOUS_MODE) 
+				{
 					if (channel == 0)
 					{
 						// compute the absolute time by adding the group time in ns
 						double abs_ts_on_a = (group_abs_time * pi->packet_binsize) / 1000 + ts_offset_us;
 						double diff = abs_ts_on_a - last_abs_ts_on_a;
-						if (last_abs_ts_on_a > 0 && print) {
-							printf("Time difference between hits on A  %.1f ns\n", diff);
-						}
+
+						if (last_abs_ts_on_a > 0 && print)
+						{printf("Time difference between hits on A  %.1f ns\n", diff);}
 
 						last_abs_ts_on_a = abs_ts_on_a;
 					}
 				}
 				
-				else {
+				else 
+				{
 					if (print)
 						printf("Hit  on channel %c -hit %u - flags %u -real Ts %d - offset %u (raw) / %.4f us\n", channel_letter, hit, flags,full_ts_us, ts_offset, ts_offset_us);
 				}
@@ -316,33 +331,38 @@
 		return group_abs_time;
 	}
 
-	void printLoadingBar(int current, int total, int barWidth = 70) {
-    float progress = static_cast<float>(current) / total;
-    int width = static_cast<int>(barWidth * progress);
+	void printLoadingBar(int current, int total, int barWidth = 70) 
+	{
+    	float progress = static_cast<float>(current) / total;
+    	int width = static_cast<int>(barWidth * progress);
 
-    std::cout << "[";
+    	std::cout << "[";
 
-    for (int i = 0; i < barWidth; ++i) {
-        if (i < width) std::cout << "=";
-        else std::cout << " ";
-    }
+    	for (int i = 0; i < barWidth; ++i)
+		{
+    	    if (i < width) std::cout << "=";
+    	    else std::cout << " ";
+    	}
 
-    std::cout << "] " << int(progress * 100.0) << "%\r";
-    std::cout.flush();
+    	std::cout << "] " << int(progress * 100.0) << "%\r";
+    	std::cout.flush();
 }
 
 	int main(int argc, char* argv[]) {
+		//----------------------------------------------------------Command Line Arguments----------------------------------------------------------------------
 		 int freq_Hz, group_end,max_packet,	verbose;
 		 int counter = 0;
 		 double pulse_width;
 
-    	 std::vector <double> vector1;
-    	 std::vector <double> vector2;
+    	 std::vector <double> data;
+    	 
     			
     	 int steps = 20000; //How often should a new file be made 
-		try {
+		try 
+		{
        	 
-		  if (argc <5 ) {
+		  if (argc <5 ) 
+		  {
             //std::cout << "Using default values: group_end = 25000 max_packet = 1000 pulse_width = 12e-09 verbose = false" << std::endl;
 			freq_Hz=12500; //done
 			group_end = 25000; //done
@@ -350,7 +370,8 @@
 			pulse_width = 12e-09;
 			verbose = false;
            
-        } else {
+        	} else 
+			{
             freq_Hz=std::stoi(argv[1]); //done
 			group_end = std::stoi(argv[2]); //done
 			max_packet = std::stoi(argv[3]); //done
@@ -358,26 +379,26 @@
 			verbose = std::stoi(argv[5]);
 
             // Check if the first argument is zero, and if it is, set num1 to a default value
-            if (pulse_width == 0) {
-                //std::cout << "Using default value for pulse width: 12e-09" << std::endl;
-                pulse_width = 12e-09; // Assign default value for num1
-            }
-        }
+            if (pulse_width == 0) 
+			{pulse_width = 12e-09;} // Assign default value for num1 //std::cout << "Using default value for pulse width: 12e-09" << std::endl;
+            
+        	}
 		}
-		catch (const std::exception& e) {
+		catch (const std::exception& e) 
+		{
     		std::cout << "Error: " << e.what() << std::endl;
 		}
-		std::string filename =  std::to_string(freq_Hz) +"_t_"+std::to_string(group_end)+"_Packs_"+std::to_string(max_packet) ;
-		
-		
 
+		
+		
+		//----------------------------------------------------------TimeTagger4 Configuration----------------------------------------------------------------------
 		printf("cronologic timetagger4 using driver: %s\n", timetagger4_get_driver_revision_str());
 		timetagger4_device* device = initialize_timetagger(8 * 1024 * 1024, 0, 0);
-		if (device == nullptr) {
-			exit(1);
-		}
+		if (device == nullptr) 
+		{exit(1);}
 		int status = configure_timetagger(device,freq_Hz, group_end, pulse_width);
-		if (status != CRONO_OK) {
+		if (status != CRONO_OK) 
+		{
 			printf("Could not configure TimeTagger4: %s", timetagger4_get_last_error_message(device));
 			timetagger4_close(device);
 			return status;
@@ -404,7 +425,8 @@
 		
 		// start data capture
 		status = timetagger4_start_capture(device);
-		if (status != CRONO_OK) {
+		if (status != CRONO_OK) 
+		{
 			printf("Could not start capturing %s", timetagger4_get_last_error_message(device));
 			timetagger4_close(device);
 			return status;
@@ -413,17 +435,25 @@
 		// start timing generator
 		timetagger4_start_tiger(device);
 
+		
+		//----------------------------------------------------------Histogram Declaration and graphics set up----------------------------------------------------------------------
+		sf::RenderWindow window(sf::VideoMode(1280, 720), "SFML Histogram"); //HIstogram window size
+		HistogramGraphics histogram = initializeHistogramGraphics(window,data,80); //Histogram set up with 80 bins
+
+
+		//----------------------------------------------------------File Configuration and Variable declaration----------------------------------------------------------------------
+		std::string filename =  std::to_string(freq_Hz) +"_t_"+std::to_string(group_end)+"_Packs_"+std::to_string(max_packet) ;
 		// some book keeping
 		int packet_count = 0;
 		int update_count = 1000; //*After how many data packets should the program print info to file
 		bool prints = packet_count % update_count == 0;
 		bool print = 0;
 
-		if(max_packet<update_count){
-			update_count = max_packet;
-		}
+		if(max_packet<update_count)
+		{update_count = max_packet;}
 		//printf("Reading packets:\n");
 		bool no_data_printed = false;
+		
 		
 		//! Here the files for data saving are configured and their timestamp is set with chrono which uses the current unix time in ms
 		unsigned __int64 now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
@@ -433,15 +463,24 @@
 		outfile.open("C:\\Users\\Administrator\\Documents\\Diana\\data_testing\\Data\\outfile_freq_" + std::to_string(freq_Hz) +
 		"_t_"+std::to_string(group_end)+"_Packs_"+std::to_string(max_packet)+ ".txt");
 		// read 100 packets
-		while (packet_count < max_packet)
+		//----------------------------------------------------------Main Loop----------------------------------------------------------------------
+		while (window.isOpen())//packet_count < max_packet)
 		{    //printf("Reading packets:\n");
 			// get pointers to acquired packets
+			sf::Event event;
+			while (window.pollEvent(event))
+        {
+            if (event.type == sf::Event::Closed)
+                window.close();
+        }
 			status = timetagger4_read(device, &read_config, &read_data);
-			if (status != CRONO_OK) {
+			if (status != CRONO_OK) 
+			{
 				std::this_thread::sleep_for(std::chrono::milliseconds(10));
 				// to avoid a lot of lines with no data
-				if (!no_data_printed) {
-					//printf(" - No data! -\n");
+				if (!no_data_printed) 
+				{	
+					printf(" - No data! -\n");
 					no_data_printed = true;
 				}
 			}
@@ -449,36 +488,47 @@
 			{
 				// iterate over all packets received with the last read
 				volatile crono_packet* p = read_data.first_packet;
-				if(verbose){
-				std::cout<<"else"<<std::endl;}
+				if(verbose)
+				{std::cout<<"else"<<std::endl;}
 				while (p <= read_data.last_packet)
-				{
-					// printf is slow, so this demo only processes every nth packet 
-					// your application would of course collect every packet
+				{	// process the data packet
 					
-					
-					if(verbose){
+					if(verbose)
+					{
 						auto end = std::chrono::high_resolution_clock::now();
 						auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 						appendfile << "Elapsed time: " << duration << " microseconds" << std::endl;
 					}
-					processPacket( p, print, &static_info, &parinfo, verbose, vector1);
+					processPacket( p, print, &static_info, &parinfo, verbose, data);
 					no_data_printed = false;
 					p = crono_next_packet(p);
 					packet_count++;
 					printLoadingBar(packet_count, max_packet);
-					bool prints = packet_count % update_count == 0;
-					//if(prints){
-					//	saveDataToFile(vector1, packet_count,filename, update_count);
-					//}
+
+					histogram.updateValues(data);
+            		std::thread updateHistogramBarsThread(&HistogramGraphics::updateHistogramBars, &histogram, std::ref(data), std::ref(window));
+            		std::thread updateLegendThread(&HistogramGraphics::updateLegend, &histogram);
+            		std::thread updateXTicksThread(&HistogramGraphics::updateXTicks, &histogram);
+            		std::thread updateYTicksThread(&HistogramGraphics::updateYTicks, &histogram);
+					updateHistogramBarsThread.join();
+            		updateLegendThread.join();
+            		updateXTicksThread.join();
+            		updateYTicksThread.join();
+
+					
 				}
-				if(verbose){
+				window.clear(sf::Color::White);
+        		histogram.draw(window);	
+				if(verbose)
+				{
 					appendfile<<"---------PACKET COUNT OR GROUP COUNT--------- "<<std::endl;
 					appendfile<< packet_count << std::endl; 
 				}
 			}
 		}
-
+		
+		for(const auto& data : histogram.HistoricalData) 
+        {outfile << data << std::endl;}
 		appendfile.close();
 		outfile.close();
 
