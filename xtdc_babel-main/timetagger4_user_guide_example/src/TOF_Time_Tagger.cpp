@@ -13,11 +13,11 @@
 	#include <vector>
 	#include <thread>
 	#include "histogram.h"
-
+	#include <random>
+	#include <windows.h>
 	using namespace std;
 	ofstream outfile;
 	ofstream appendfile;
-	//create the file to which the data will be written. outfile is for the continuous histogramand appendfile to store the data longterm
 	stringstream ss;
 	// If true the time tagger triggers a start periodically
 	// The time difference of signals on channel A are measured
@@ -180,36 +180,7 @@
 		printf("\nTDC binsize         : %0.2f ps\n", pi->binsize);
 	}
 
-	void saveDataToFile(std::vector<double>& data, int counter,std::string name, int steps) 
-	{ //change int back to double when going back
-    	//gets the current Unix time in ms
-		std::string filename="C:\\Users\\Administrator\\Documents\\Diana\\data_testing\\Data\\outfile_freq_"+ name+".txt";
-    	if(counter%steps==0)
-    	         { 
-    	            //std::cout << "Opening file "<< std::endl;
 	
-
-    	            int now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-		            filename ="C:\\Users\\Administrator\\Documents\\Diana\\data_testing\\Data\\outfile_freq_"+ name +std::to_string(now) +".txt";
-	
-
-    	         }
-    	std::ofstream databin(filename, std::ios::out | std::ios::app);
-    	            if (!databin) 
-    	            {
-    	                std::cerr << "Error opening file: " << filename << std::endl;
-    	                return;
-    	            }
-    	size_t dataSize = data.size();
-    	 for (double num : data) 
-		{databin << num << "\n";}
-    	//databin.write(reinterpret_cast<const char*>(&dataSize), sizeof(size_t));
-    	//databin.write(reinterpret_cast<const char*>(data.data()), dataSize * sizeof(double));
-
-    	databin.close();
-    	data.clear(); //Now the vector is clean again. 
-    	//This function creates a data file with the hits of all the packets processed in the last loop
-}	
 
 	double last_abs_ts_on_a = 0; //? TS last hit on channel A
 	int64_t last_group_abs_time = 0;
@@ -248,7 +219,7 @@
 			last_group_abs_time = group_abs_time;
 		}
 
-		int hit_count = 2 * (p->length);
+		uint32_t hit_count = 2 * (p->length);
 		// Two hits fit into every 64 bit word. The second in the last word might be empty
 		// This flag  tells us, whether the number of hits in the packet is odd
 		if ((p->flags & TIMETAGGER4_PACKET_FLAG_ODD_HITS) != 0)
@@ -263,7 +234,7 @@
 			appendfile<<"Rollover count " << rollover_count <<std::endl;
 			appendfile<<"hitcount "<< hit_count << std::endl;
 		}
-		double full_ts_us=0; //!just testing
+		int64_t full_ts_us=0; //!just testing
 		for (int i = 0; i < hit_count; i++)
 		{
 			uint32_t hit = packet_data[i];
@@ -274,11 +245,11 @@
 
 			if ((flags & TIMETAGGER4_HIT_FLAG_TIME_OVERFLOW) != 0) 
 			{  //? bitwise AND operation
-			/*//? example:   Binary Representation of flags:              01011010
+			//? example:   Binary Representation of flags:              01011010
   			  //? Binary Representation of TIMETAGGER4_HIT_FLAG_TIME_OVERFLOW:  00000010
             //? Result of flags & TIMETAGGER4_HIT_FLAG_TIME_OVERFLOW:         00000010
- 			//!Check if accurate.*/
-				// this is a overflow of the 23/24 bit counter)
+ 			//!Check if accurate.
+			// this is a overflow of the 23/24 bit counter)
 				rollover_count++;
 			}
 			else 
@@ -290,7 +261,7 @@
 				uint32_t ts_offset = hit >> 8 & 0xffffff; //? >> is bitwise shift operation. >> 8 shifts 8 bits to the right
 				//? bits representing the time stamp start at 8 bits in hit.
 				// Convert timestamp to ns, this is relative to the start of the group
-				double ts_offset_us = (ts_offset + rollover_count * rollover_period_bins) * pi->binsize / 1000000.0;
+				uint64_t ts_offset_us = (ts_offset + rollover_count * rollover_period_bins) * pi->binsize / 1000000.0;
 				full_ts_us=ts_offset_us+group_abs_time*pi->binsize/1000000; //factor of 100000 to converet to us
 					
 				//! outfile << ("%u", ts_offset_us) ;
@@ -348,8 +319,75 @@
     	std::cout.flush();
 }
 
-	int main(int argc, char* argv[]) {
+/*	int main()
+{
+    sf::RenderWindow window(sf::VideoMode(1280, 720), "SFML Histogram");
+    std::mt19937 generator;  // Mersenne Twister random number generator
+    std::normal_distribution<> distribution(50, 2); // Uniform distribution between 0 and 100
+    // Define histogram data
+    std::vector<double> data = { 50,40 };
+
+
+    std::ofstream file("data-dist-normal.txt");
+    std::ofstream time_vs_size("parallel-time.txt");
+    int i = 0;
+    sf::Font font;
+    font.loadFromFile("Roboto-Regular.ttf");
+    HistogramGraphics histogram_setup = initializeHistogramGraphics(window, data, 80,font);
+    while (window.isOpen())
+    {
+        auto start = std::chrono::high_resolution_clock::now();
+        
+        sf::Event event;    
+        while (window.pollEvent(event))
+        {
+            if (event.type == sf::Event::Closed)
+                window.close();
+        }
+
+        if (i == 10)
+        {   
+            for(int j=0;j<10;j++)
+            {data.push_back(distribution(generator));}
+              
+
+            histogram_setup.updateValues(data,false);
+            histogram_setup.updateHistogramBars(data, window);
+            histogram_setup.updateLegend();
+            histogram_setup.updateXTicks();
+            histogram_setup.updateYTicks();
+            
+            //std::cout << i << std::endl;
+            
+            
+            auto end = std::chrono::high_resolution_clock::now();  // End timer
+            std::chrono::duration<double> elapsed = end - start;
+            time_vs_size << elapsed.count() << "\t" << histogram_setup.HistoricalData.size() << "\n";
+            
+            
+            i = 0;
+            data.clear();
+  
+
+        }
+        i++;
+        window.clear(sf::Color::White);
+        histogram_setup.draw(window);
+        window.display();
+        
+    }
+    for (const auto& data : histogram_setup.HistoricalData)
+    {
+        file << data << std::endl;
+    }
+    time_vs_size.close();
+    file.close();
+
+    return 0;
+}
+*/
 		//----------------------------------------------------------Command Line Arguments----------------------------------------------------------------------
+int main(int argc, char* argv[]) {
 		 int freq_Hz, group_end,max_packet,	verbose;
 		 int counter = 0;
 		 double pulse_width;
@@ -388,7 +426,6 @@
 		{
     		std::cout << "Error: " << e.what() << std::endl;
 		}
-
 		
 		
 		//----------------------------------------------------------TimeTagger4 Configuration----------------------------------------------------------------------
@@ -437,9 +474,11 @@
 
 		
 		//----------------------------------------------------------Histogram Declaration and graphics set up----------------------------------------------------------------------
-		sf::RenderWindow window(sf::VideoMode(1280, 720), "SFML Histogram"); //HIstogram window size
-		HistogramGraphics histogram = initializeHistogramGraphics(window,data,80); //Histogram set up with 80 bins
-
+		sf::RenderWindow window(sf::VideoMode(1280, 720), "SFML Histogram"); //Histogram window size
+		sf::Font font;
+    	font.loadFromFile("Roboto-Regular.ttf"); //Text font, file should be in the same directory as the .cpp file
+		HistogramGraphics histogram = initializeHistogramGraphics(window,data,80,font); //Histogram set up with 80 bins
+		
 
 		//----------------------------------------------------------File Configuration and Variable declaration----------------------------------------------------------------------
 		std::string filename =  std::to_string(freq_Hz) +"_t_"+std::to_string(group_end)+"_Packs_"+std::to_string(max_packet) ;
@@ -503,22 +542,20 @@
 					no_data_printed = false;
 					p = crono_next_packet(p);
 					packet_count++;
+
 					printLoadingBar(packet_count, max_packet);
-
+//----------------------------------------------Histogram Update and Graphics--------------------------------------------------------------
 					histogram.updateValues(data);
-            		std::thread updateHistogramBarsThread(&HistogramGraphics::updateHistogramBars, &histogram, std::ref(data), std::ref(window));
-            		std::thread updateLegendThread(&HistogramGraphics::updateLegend, &histogram);
-            		std::thread updateXTicksThread(&HistogramGraphics::updateXTicks, &histogram);
-            		std::thread updateYTicksThread(&HistogramGraphics::updateYTicks, &histogram);
-					updateHistogramBarsThread.join();
-            		updateLegendThread.join();
-            		updateXTicksThread.join();
-            		updateYTicksThread.join();
-
-					
+            		histogram.updateValues(data,false);
+            		histogram.updateHistogramBars(data, window);
+            		histogram.updateLegend();
+            		histogram.updateXTicks();
+            		histogram.updateYTicks();
+//--------------------------------------------------------------------------------------------------------------------------------------------
+					data.clear();
 				}
 				window.clear(sf::Color::White);
-        		histogram.draw(window);	
+        		histogram.draw(window);
 				if(verbose)
 				{
 					appendfile<<"---------PACKET COUNT OR GROUP COUNT--------- "<<std::endl;
@@ -529,13 +566,14 @@
 		
 		for(const auto& data : histogram.HistoricalData) 
         {outfile << data << std::endl;}
+		
 		appendfile.close();
 		outfile.close();
-
+		
 		// shut down packet generation and DMA transfers
-		timetagger4_stop_capture(device);
+		//timetagger4_stop_capture(device);
 
 		// deactivate timetagger4
-		timetagger4_close(device);
+		//timetagger4_close(device);
 		return 0;
 	}

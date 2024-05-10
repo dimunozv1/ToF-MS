@@ -1,6 +1,7 @@
 #include <vector>
 #include <iostream>
 #include <SFML/Graphics.hpp>
+#include <sstream>
 #include <iomanip>
 struct HistogramGraphics
     {
@@ -85,11 +86,11 @@ HistogramGraphics initializeHistogramGraphics(sf::RenderWindow& window, std::vec
 
 void HistogramGraphics::frequencies(std::vector<double> data)
 {       
-  
+    int binIndex = 0;
     
     //std::cout<<"Bin Width = "<<binWidth<< " bin number = "<< bin_number<< std::endl;
-    for (float value : data) {
-        int binIndex;
+    for (double value : data) {
+        binIndex = 0;
         if((value - MinDataValue)/bin_number == binWidthnumValue)
         {
             binIndex = bin_number-1;
@@ -98,8 +99,7 @@ void HistogramGraphics::frequencies(std::vector<double> data)
         {
             binIndex = (value - MinDataValue) / binWidthnumValue;
         }
-        //std::cout<<"Value = "<<value<< " binIndex = "<< binIndex<< std::endl;
-        //std::cout << "Bin Index = " << binIndex << std::endl;
+        
         freq[binIndex]+=1.0;
     }
 
@@ -223,7 +223,10 @@ void HistogramGraphics::draw(sf::RenderWindow& window) {
         //Draw all the necessary elements
         for (const auto& bar : Histogram_bars)
             window.draw(bar);
-
+        xLabel.setFont(font);
+        yLabel.setFont(font);
+        title.setFont(font);
+        legendText.setFont(font);
         drawAxisTicks(window);
         window.draw(square);
         window.draw(xAxis);
@@ -234,28 +237,32 @@ void HistogramGraphics::draw(sf::RenderWindow& window) {
         window.draw(legendItem);
         window.draw(legendText);
         window.draw(legendDataRectangle);
-        window.display();
+        
     }
 void HistogramGraphics::drawAxisTicks(sf::RenderWindow& window) {
         for (auto& tick : xTicks) 
             {window.draw(tick);}
 
         for (auto& label : xTickLabels) 
-            {window.draw(label);}
+        {
+            label.setFont(font);
+            window.draw(label);}
 
         for (auto& tick : yTicks) 
             {window.draw(tick); }
             
         for (auto& label : yTickLabels) 
-            { window.draw(label);}
+            {
+            label.setFont(font);
+            window.draw(label);}
     }
 
-HistogramGraphics initializeHistogramGraphics(sf::RenderWindow& window, std::vector<double> data,int nbins) {
+HistogramGraphics initializeHistogramGraphics(sf::RenderWindow& window, std::vector<double> data,int nbins, sf::Font &font) {
     // Create an instance of the HistogramGraphics struct to allow the initialization of the histogram
     HistogramGraphics graphics;
 
     // Load font
-    graphics.loadFont();
+    graphics.font = font;
 
     // Set the number of bins in the histogram
     graphics.bin_number = nbins;
