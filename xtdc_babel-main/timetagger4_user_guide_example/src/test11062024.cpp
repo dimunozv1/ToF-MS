@@ -324,7 +324,7 @@
     	std::cout.flush();
 }
 
-	/*int main()
+	int main()
 {
     sf::RenderWindow window(sf::VideoMode(1280, 720), "SFML Histogram");
     std::mt19937 generator;  // Mersenne Twister random number generator
@@ -389,7 +389,8 @@
     file.close();
 
     return 0;
-}*/
+}
+	/*
 		//----------------------------------------------------------Command Line Arguments----------------------------------------------------------------------
 int main(int argc, char* argv[]) {
 		 int freq_Hz, group_end,max_packet,	verbose;
@@ -601,4 +602,4 @@ int main(int argc, char* argv[]) {
 		return 0;
 	}
 
-	
+	*/
