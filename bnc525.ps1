@@ -11,7 +11,7 @@ if ($args.Length -gt 0) {
 } else {
     Write-Host "No runtime variable provided."
 }
-
+$FormattedPeriod = $Period_s.ToString()
 # Function to read commands from the file
 function ReadCommandsFromFile($filePath) {
     if (Test-Path $filePath) {
@@ -41,8 +41,8 @@ try {
         $response = $serialPort.ReadExisting()
         Write-Host "Response: $response" #Writes the response from bnc 525 to the terminal
     }
-    $serialPort.WriteLine("Command: ::PULSE0:PERIOD $Period_s`r`n")
-    Write-Host "Command: ::PULSE0:PERIOD $Period_s`r`n" #Writes the command out to the terminal
+    $serialPort.WriteLine(":PULSE0:PER $Period_s`r`n")
+    Write-Host "Command: :PULSE0:PER $Period_s`r`n" #Writes the command out to the terminal
     Start-Sleep -Milliseconds 100
     $response = $serialPort.ReadExisting()
     Write-Host "Response: $response" #Writes the response from bnc 525 to the terminal
